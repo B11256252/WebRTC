@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>IP地址和地理位置檢測</title>
+</head>
+<body>
+<button onclick="getIPs()">顯示IP地址和地理位置</button>
+<div id="vpn-ip">VPN IP地址: 加載中...</div>
+<div id="real-ip">真實IP地址: 加載中...</div>
+<script>
+function getIPs() {
+    // 使用API獲取VPN IP地址和經緯度
+    fetch('https://ipinfo.io/json')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('vpn-ip').textContent = 'VPN IP地址: ' + data.ip + ' 經緯度: ' + data.loc;
+    });
+
+    // 使用WebRTC獲取真實IP地址
+    var peerConnection = new RTCPeerConnection({iceServers: []});
+    peerConnection.createDataChannel('');
+    peerConnection.createOffer().then(offer => peerConnection.setLocalDescription(offer));
+    peerConnection.onicecandidate = function(event) {
+        if (event.candidate) {
+            var ipRegex = /([0-9]{1,3}(\.[0-9]{1,3}){3})/;
+            var ipAddr = ipRegex.exec(event.candidate.candidate)[1];
+            document.getElementById('real-ip').textContent = '真實IP地址: ' + ipAddr;
+            // 獲取與真實IP地址相關的經緯度
+            fetch('https://ipinfo.io/' + ipAddr + '/json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('real-ip').textContent += ' 經緯度: ' + data.loc;
+            });
+        }
+    };
+}
+</script>
+</body>
+</html>
